@@ -87,3 +87,6 @@ The high-current, high-speed switching core of the driver.
 
 * **LTspice Thermal & Switching Simulation:** Simulating the CSD18532KCS Half-Bridge switching characteristics to mathematically verify switching losses, conduction losses, and RC Snubber damping efficiency under 30A load.
 * **Input Filter Inrush Simulation:** Modeling the initial power-on sequence to verify the LM5050MK-1 ideal diode controller's response and validate the input LC filter's damping performance.
+
+## 👨‍💻 Contact
+If you have any questions or want to collaborate, feel free to reach out via GitHub or [LinkedIn](https://www.linkedin.com/in/envergokaycay/).

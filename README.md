@@ -1,13 +1,33 @@
-# 🚀 MIL-STD-461G Compliant BLDC Motor Driver
+# 🚀 MIL-STD-461G Compliant 3-Phase BLDC Motor Driver
 
-![Status](https://img.shields.io/badge/Status-Schematic_Complete_|_Moving_to_Layout-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Hardware_Complete-success?style=for-the-badge)
 ![MCU](https://img.shields.io/badge/MCU-STM32G431CBT3-blue?style=for-the-badge)
 ![Gate Driver](https://img.shields.io/badge/Gate_Driver-DRV8320HRTVR-red?style=for-the-badge)
 ![FOC](https://img.shields.io/badge/Control-Two--Shunt_FOC-orange?style=for-the-badge)
 
-This project is a hardware design for an industrial/military-grade Brushless DC (BLDC) Motor Driver, engineered to operate under harsh environmental conditions and meet strict electromagnetic compatibility (EMI/EMC) requirements (MIL-STD-461G). 
+This project is a complete hardware design for an industrial/military-grade Brushless DC (BLDC) Motor Driver, engineered to operate under harsh environmental conditions and meet strict electromagnetic compatibility (EMI/EMC) requirements based on **MIL-STD-461G**. 
 
-The project was built from scratch using Altium Designer with a **Strict Hierarchical** design methodology. The schematic design is 100% complete, featuring advanced signal integrity, power isolation, and FOC (Field Oriented Control) hardware optimizations. The project is currently moving into the **PCB Layout** phase.
+The project was built from scratch using Altium Designer with a **Strict Hierarchical** design methodology. The hardware design (Schematic & PCB Layout) is 100% complete, featuring advanced signal integrity, power isolation, high-current routing, and FOC (Field Oriented Control) hardware optimizations.
+
+## 🌟 3D Hardware Showcase
+
+| Isometric View | Top View |
+|:---:|:---:|
+| <img src="images/3D_1.png" alt="3D Isometric" width="400"/> | <img src="images/3D_TOP.png" alt="3D Top" width="400"/> |
+
+---
+
+## 🛠️ PCB Layout & Thermal Management
+
+The PCB layout was meticulously routed to handle 10A-15A continuous current while maintaining strict signal integrity for the analog front-end.
+
+* **High-Current Polygons:** The Top and Bottom layers utilize massive polygon pours for the +28V input and phase outputs to minimize DC resistance and optimize thermal dissipation.
+* **Component Placement:** The STM32G4 and sensitive analog traces are physically isolated from the high-voltage switching nodes of the DRV8320 and CSD18532KCS MOSFETs.
+* **Via Stitching:** Extensive ground via stitching is implemented across the board to tie the return planes together, reducing loop inductance and EMI emissions.
+
+| Top Layer (Polygons Enabled) | Bottom Layer (Routing & Ground Planes) |
+|:---:|:---:|
+| <img src="images/2D_Top_Layer_Polygon.jpg" alt="Top Layer" width="400"/> | <img src="images/2D_Bottom_Layer.jpg" alt="Bottom Layer" width="400"/> |
 
 ---
 
@@ -19,37 +39,35 @@ To maximize maintainability, signal integrity, and fault isolation, the system i
 The architectural backbone of the system. Power and signal buses (Harness & Bus) are securely routed between blocks. 
 * **Design Decision:** Power net names (e.g., `+28V_FILT`, `+3V3`) were unified across all hierarchical sheets instead of using local names. This ensures continuous, unbroken copper polygon pours (Power Planes) during the PCB layout phase, minimizing track impedance.
 
-![Main Sheet](images/main.jpg)
+<img src="images/main.jpg" alt="Main Sheet" width="800"/>
 
 ### 2. Power Protection Stage
 The system's first line of defense against electrical anomalies.
 * **Ideal Diode Controller:** Instead of a standard power diode, an **LM5050MK-1** paired with an N-Channel MOSFET is used for reverse polarity protection. 
-* **Hardware Detail:** The MOSFET is carefully oriented so its body diode blocks reverse current, preventing massive heat dissipation (Power Loss = I²R) and voltage drops during high-current forward operation.
+* **Hardware Detail:** The MOSFET is carefully oriented so its body diode blocks reverse current, preventing massive heat dissipation and voltage drops during high-current forward operation.
 
-![Power Protection](images/power_protection.jpg)
+<img src="images/power_protection.jpg" alt="Power Protection" width="800"/>
 
 ### 3. Power Distribution Stage
 The layer where the 28V main bus voltage is stepped down in stages for the digital and analog logic units.
 * **Thermal Distribution:** The regulation is split into a two-stage cascade: `28V -> 12V (LM5005)` and `12V -> 3.3V (TPS54302)`. This distributes the thermal load of the step-down (Buck) converters and prevents a single point of failure from overheating.
 
-![Power Distribution](images/power_distrubition.jpg)
+<img src="images/power_distrubition.jpg" alt="Power Distribution" width="800"/>
 
 ### 4. MCU Control (Digital Brain & Analog Front-End)
 Powered by the **STM32G431CBT3**, explicitly chosen for its advanced motor control peripherals.
 * **Two-Shunt FOC Architecture:** Instead of using external Current Sense Amplifiers (CSAs), the design leverages the STM32G4's hardware **OPAMPs in PGA (Programmable Gain Amplifier) mode**. Phase currents ($I_a$ and $I_b$) are routed directly to the MCU. The third phase current ($I_c$) is calculated in software using Kirchhoff's Current Law, saving BOM cost and board space while reducing signal latency.
 * **LC Low-Pass Filtering:** A **Murata BLM Series Ferrite Bead** is placed sequentially before the MCU's 3.3V bypass capacitors. This isolates the MCU's sensitive analog and digital logic from the high-frequency switching noise generated by the 28V inverter stage.
-* **Vibration-Proof Debugging:** A locking **JST-GH** connector is implemented for the SWD interface to prevent disconnection under heavy mechanical vibration.
 
-![MCU Control](images/mcu_control.jpg)
+<img src="images/mcu_control.jpg" alt="MCU Control" width="800"/>
 
 ### 5. Inverter Power Stage
 The high-current, high-speed switching core of the driver.
 * **Hardware:** Texas Instruments **DRV8320HRTVR** smart gate driver paired with **CSD18532KCS** (100A rated) power MOSFETs.
 * **EMI Slew-Rate Control:** Although the DRV8320 is a smart driver, empty 0R pads for series **Gate Resistors** were implemented to allow manual tuning of the MOSFET turn-on/turn-off slew rates—a critical requirement for passing MIL-STD-461G radiated emissions tests.
 * **RC Snubber Integration:** Direct capacitor connections to GND on the phase outputs were strictly avoided to prevent catastrophic shoot-through currents. Instead, footprints for **RC Snubbers** (Resistor + Capacitor in series) were placed to dampen voltage ringing and high-frequency emissions during switching transitions.
-* **High-Current Terminals:** **32A-rated Phoenix Contact (MKDS 5 series)** screw terminals are used for the motor phase outputs to prevent bottlenecking the CSD18532KCS MOSFETs.
 
-![Inverter Power Stage](images/inverter_power_stage.jpg)
+<img src="images/inverter_power_stage.jpg" alt="Inverter Power Stage" width="800"/>
 
 ---
 
@@ -59,17 +77,5 @@ The high-current, high-speed switching core of the driver.
    To prevent "Ground Bounce" (massive switching currents returning to the source) from corrupting the MCU's sensitive millivolt-level analog measurements, the Analog Ground (`AGND`) and Power Ground (`PGND`/`GND`) are separated. They meet at exactly *one* physical location on the PCB via a **Net Tie (NT400)**, ensuring pristine Signal Integrity.
 2. **Professional Block Numbering (Annotation):**
    All components are numbered sequentially by hierarchical block (e.g., Protection is the 100 series, Inverter is the 400 series) allowing engineers to instantly locate physical components on the PCB by looking at their designator.
-3. **Zero-Error Compilation:**
-   The strict hierarchical architecture was meticulously refined to resolve all multiple net name violations and floating pins, resulting in a perfectly clean compilation: `[Info] Compile successful, no errors found.`
-
----
-
-## 🚀 Current Status & Next Steps
-
-✅ **Component Selection & Sourcing:** Complete.
-✅ **Hierarchical Schematic Design:** 100% Complete (ERC Verified).
-⏳ **PCB Layout & Routing:** **IN PROGRESS.**
-   * Component Placement & Floorplanning.
-   * Solid Polygon Pours for +28V and GND high-current return paths.
-   * Routing of sensitive analog differential pairs ($I_a$, $I_b$) away from switching nodes.
-   * Via Stitching for Thermal Management.
+3. **Zero-Error Design:**
+   The strict hierarchical architecture and PCB layout were meticulously refined to resolve all design rule violations, resulting in perfectly clean ERC (Electrical Rule Check) and DRC (Design Rule Check) reports.
